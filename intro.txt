@@ -1,0 +1,15 @@
+Build a native Linux terminal emulator using Python, GTK4, and VTE with these features:
+
+- Multiple terminal panes in a single window
+- Split vertically (side by side) with Ctrl+Shift+D
+- Split horizontally (top/bottom) with Ctrl+Shift+E
+- Close current pane with Ctrl+Shift+W
+- Navigate between panes with Ctrl+Tab
+- Ctrl+C copies when text is selected, sends SIGINT when nothing is selected
+- Ctrl+V pastes from clipboard
+- Resizable panes using GTK Paned widgets
+- Dark theme matching system theme
+- New tab support with Ctrl+Shift+T
+- Configurable font and font size
+- Spawns /bin/bash (or user's default shell) per pane
+- Clean minimal UI with no menu bar (or toggleable)
