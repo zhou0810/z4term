@@ -119,16 +119,21 @@ def load_config():
         pass
     if cfg["shell"] is None:
         cfg["shell"] = os.environ.get("SHELL", "/bin/bash")
+    # Validate shell path: must exist and be executable
+    if not os.path.isfile(cfg["shell"]) or not os.access(cfg["shell"], os.X_OK):
+        cfg["shell"] = "/bin/bash"
     if cfg["theme"] not in THEMES:
         cfg["theme"] = "tango-dark"
     cfg["opacity"] = max(0.1, min(1.0, float(cfg["opacity"])))
+    cfg["scrollback_lines"] = max(100, min(1_000_000, int(cfg["scrollback_lines"])))
     return cfg
 
 
 def ensure_config():
-    os.makedirs(CONFIG_DIR, exist_ok=True)
+    os.makedirs(CONFIG_DIR, mode=0o700, exist_ok=True)
     if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w") as fh:
+        fd = os.open(CONFIG_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
             json.dump(DEFAULTS, fh, indent=2)
 
 
@@ -948,7 +953,8 @@ class TerminalWindow(Gtk.ApplicationWindow):
             if tree:
                 session["tabs"].append(tree)
         try:
-            with open(SESSION_FILE, "w") as fh:
+            fd = os.open(SESSION_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as fh:
                 json.dump(session, fh, indent=2)
         except OSError:
             pass
@@ -971,8 +977,8 @@ class TerminalWindow(Gtk.ApplicationWindow):
         idx = self.notebook.append_page(box, ebox)
         self.notebook.set_current_page(idx)
 
-    def _restore_tree(self, data):
-        if data is None:
+    def _restore_tree(self, data, depth=0):
+        if data is None or depth > 20:
             return None
         if data.get("type") == "terminal":
             return TerminalPane(self, cwd=data.get("cwd"))
@@ -984,8 +990,8 @@ class TerminalWindow(Gtk.ApplicationWindow):
             )
             paned = Gtk.Paned(orientation=orient)
             paned.set_wide_handle(True)
-            c1 = self._restore_tree(data.get("child1"))
-            c2 = self._restore_tree(data.get("child2"))
+            c1 = self._restore_tree(data.get("child1"), depth + 1)
+            c2 = self._restore_tree(data.get("child2"), depth + 1)
             if c1:
                 paned.pack1(c1, resize=True, shrink=True)
             if c2:
