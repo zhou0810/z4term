@@ -237,6 +237,9 @@ paned > separator {{
 #tip-bar-text {{
     font-size: 12px;
 }}
+vte-terminal {{
+    transition: border-color 0.4s ease-in-out;
+}}
 vte-terminal.focused {{
     border-top: 2px solid {colors[0]};
     border-right: 2px solid {colors[1]};
