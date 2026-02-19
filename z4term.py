@@ -7,6 +7,7 @@ Dependencies: Python 3, GTK 3, VTE 2.91
 
 import json
 import os
+import random
 import subprocess
 import sys
 
@@ -201,47 +202,61 @@ def _theme_colors(config):
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
 
-CSS = b"""
-window {
+def _random_bright_color():
+    """Generate a random bright color suitable for borders."""
+    h = random.random()
+    # Convert HSL (h, 0.7 saturation, 0.65 lightness) to RGB
+    import colorsys
+    r, g, b = colorsys.hls_to_rgb(h, 0.65, 0.7)
+    return f"#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}"
+
+
+def _build_css():
+    colors = [_random_bright_color() for _ in range(4)]
+    return f"""
+window {{
     background-color: #1e1e2e;
-}
-notebook header tabs tab {
+}}
+notebook header tabs tab {{
     padding: 4px 12px;
-}
-paned > separator {
+}}
+paned > separator {{
     min-width: 2px;
     min-height: 2px;
     background-color: #444;
-}
-#tip-bar {
+}}
+#tip-bar {{
     background-color: #2a2a3e;
     padding: 6px 14px;
-}
-#tip-bar-title {
+}}
+#tip-bar-title {{
     font-weight: bold;
     font-size: 14px;
     color: #cdd6f4;
-}
-#tip-bar-text {
+}}
+#tip-bar-text {{
     font-size: 12px;
-}
-vte-terminal.focused {
-    border: 2px solid #89b4fa;
-}
-vte-terminal.unfocused {
+}}
+vte-terminal.focused {{
+    border-top: 2px solid {colors[0]};
+    border-right: 2px solid {colors[1]};
+    border-bottom: 2px solid {colors[2]};
+    border-left: 2px solid {colors[3]};
+}}
+vte-terminal.unfocused {{
     border: 2px solid transparent;
-}
-.tab-activity label {
+}}
+.tab-activity label {{
     color: #f9e2af;
-}
-#search-bar {
+}}
+#search-bar {{
     background-color: #2a2a3e;
     padding: 4px 8px;
-}
-#search-bar entry {
+}}
+#search-bar entry {{
     min-height: 28px;
-}
-"""
+}}
+""".encode()
 
 
 def _tip(key, action):
@@ -460,7 +475,7 @@ class TerminalWindow(Gtk.ApplicationWindow):
 
         # CSS
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(CSS)
+        css_provider.load_from_data(_build_css())
         Gtk.StyleContext.add_provider_for_screen(
             screen,
             css_provider,
