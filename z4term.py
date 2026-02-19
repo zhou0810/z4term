@@ -388,6 +388,7 @@ class TerminalPane(Vte.Terminal):
         self._unfocused_since = None
         self._window.focused_terminal = self
         self._window._clear_tab_activity(self)
+        self._window.refresh_border_colors()
         return False
 
     def _on_blur(self, _widget, _event):
@@ -474,11 +475,11 @@ class TerminalWindow(Gtk.ApplicationWindow):
             settings.set_property("gtk-application-prefer-dark-theme", True)
 
         # CSS
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(_build_css())
+        self._css_provider = Gtk.CssProvider()
+        self._css_provider.load_from_data(_build_css())
         Gtk.StyleContext.add_provider_for_screen(
             screen,
-            css_provider,
+            self._css_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
@@ -539,6 +540,10 @@ class TerminalWindow(Gtk.ApplicationWindow):
 
         # Periodic CWD-based tab title fallback
         GLib.timeout_add_seconds(3, self._poll_tab_titles)
+
+    def refresh_border_colors(self):
+        """Regenerate random border colors for the focused pane."""
+        self._css_provider.load_from_data(_build_css())
 
     def restore_or_init(self, session_data=None):
         """Restore a previous session or create a default tab."""
